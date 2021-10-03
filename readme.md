@@ -1,6 +1,8 @@
 # golang 学习记录
 
-第一节:
-- 设置golang 环境
-- 通过 dlv 感受一下 go 的运行过程
-- 对调度的关键函数有个直观的印象
+# Practice Makes Perfect
+
+# 能动手就不要多 bb
+
+
+            -- by 鲁迅
