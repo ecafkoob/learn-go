@@ -1,0 +1,102 @@
+### 环境准备
+
+
+- Mac 系统安装 goland virtualbox vagrant go1.17.1
+
+    `brwe install virtualbox vagrant`
+- 通过 vagrantfile 直接安装相关工具(vim gdb binutils dlv)
+
+### 开始实验
+
+- 准备一个 hello world.go 程序
+```go
+package  main
+func main() {
+	go func() {
+		println("in grt do sth")
+    }()
+	args()
+}
+func args() {
+	println("do sth")
+}
+// 通过 go build  编译. 通过编译标识告诉 go 编译器不要优化不要内联.
+// go build -gcflags "all=-l -N" main.go
+```
+
+- 获取可执行文件的入口点
+  * readelf -h ./mian 获取
+  * gdb 中的 info file
+  * Mac 图形界面工具 cutter 通过 entry0 中,右键`__rt0_amd64_darwin` 复制地址可以得到.
+
+- 通过 dlv debug go:
+  * `dlv exec ./main` 直接通过 binary 调试
+  * b 下断点
+  * c 运行到断点处
+  * r 跑飞了重新运行程序
+  * bt 打印 stack frame
+  * args 看函数的参数
+  * regs 显示寄存器的值
+  * vars 显示包级别变量的值
+  * s 单步运行
+  * si 一次执行一条汇编指令
+  * so 从当前函数跳出
+  
+- 跟踪 rt0_go 这个汇编程序感受一下 go 程序启动:
+  * 把通过操作系统获得的 argc 和 argv 到寄存器中. (argument count ,argument vector)
+  * 然后创建 istack 之类的栈初始化工作
+  * 找出 go 程序运行的 CPU 的信息
+  * 然后创建设置每个 goroutine 和 machine 的寄存器. (set the per-goroutine and per-mach "registers") runtime 的 g0 m0包级变量在这时候赋值.然后让 m->g0 = g0
+  * 调用 runtime.check() 对语言自带的类型进行检查.
+
+- 通过之前的前戏,到了我们正真关心的,使用 go 写的 runtime 的一些东西了
+  * runtime.args 把 argc argv 赋给 runtime 包级变量.然后进行后续处理. 这应该是os.Args 故事的开端吧.
+  * runtime.osinit 这里获取 CPU 的逻辑核数, page size 等系统信息
+  * runtime.schedinit 目前能看懂的只有 这里设置了最大 m 数 10000 这里通过 procresize 创建了指定数量的 P. 还有一些调度器的初始化工作.
+  * runtime.mainPC mainPC是runtime.main的一个函数值，将被传递给newproc。
+  * runtime.newproc  这里通过 newproc 调用 newproc1 创建了一个 g 然后把这个 g 放到当前 g 对应的m 的 p.runnext 中.
+  * runtime.mstart 这里先调用 mstart0 mstart0 调用 mstart1 mstart1 调用 schedule() 然后开启调度循环的故事 -> execute() -> gogo -> goexit()
+- m0 退出 创建的系统级别的资源销毁. go 程序完成了他复杂的一生.
+
+### 通过 goland 理清 一些调度相关的函数的调用方
+
+
+通过 goland 的 command + shift + f 在任意 go 项目中查找, scope 要选 all places.
+command + left click 查看调用方.
+
+
+
+runqget() 会被如下函数调用:
+* findrunnable()
+* schedule()
+* stealWork()
+
+runqput() 会被如下函数调用:
+* ready()
+* goyield_m()
+* newproc() -> newproc1 把生成的 g 放到 `_P_.runnext`
+* globrunqget()
+
+globrunqget()
+* findrunnable()
+* schedule()
+
+globrunqput()
+* debugCallWrap1()
+* goschedImpl()
+* exitsyscall0()
+
+schedule()
+* mstart1()
+* park_m()
+* goschedImpl()
+* preemptPark()
+* goyield_m()
+* goexit0()
+* exitsyscall0()
+
+findrunnable()
+* schedule()
+
+sysmon()
+* runtime.main() 非 wasm 平台作为 newm() 的参数.
