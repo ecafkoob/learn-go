@@ -99,3 +99,11 @@ findrunnable()
 
 sysmon()
 * runtime.main() 非 wasm 平台作为 newm() 的参数. runtime.main() call newm() call sysmon()
+
+
+### 一些想法
+Q: 为什么g新创建的 g 一定要放到 p 的 runnext? 
+A: 因为这样程序的局部性更好, 想想我们 go func(){}() 时,需要用到的数据一般就在很近的上下文中定义.
+
+Q: runqget 继承时间片
+A: 防止一个 P 下的 G 占用过多的 CPU 时间, 保证公平.同事兼顾时间局部性.有助于提升性能.
