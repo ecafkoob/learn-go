@@ -236,6 +236,7 @@ isLeaf 接受一个 ast.Node 判断左右子树是否为 Ident 和 BasicLit 如�
 
 添加了 小于 小于等于 大于等于支持
 
+完整代码连接:[github](https://github.com/ecafkoob/learn-go/blob/cfb079640efd2c58c7debd9f05e650fcf9606f04/ch2/rule_match_test.go)
 所以修改的代码如下:
 ```
 		if _,ok:= m[x.Name]; !ok {
