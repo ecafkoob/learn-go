@@ -87,7 +87,7 @@ runtime.makechan: 使用的 src/runtime/chan 中的 makechan() 函数. 其实就
 
 runtime.closechan:
  * 先判断 c *hchan 是否为 nil ,nil 则 panic 
- * 判断 c.closed 是否为零, 为零则 panic
+ * 判断 c.closed 是否为零, 非零则 panic
  * c.closed 设为 1
  * 释放所有readers
  * 释放所有的 writers
