@@ -233,6 +233,9 @@ isLeaf 接受一个 ast.Node 判断左右子树是否为 Ident 和 BasicLit 如�
 
 还有一点值得注意 编译器在编译就可以确定两个 字符串形式数字的比较. 而不需要 strconv.Atoi()
 
+
+添加了 小于 小于等于 大于等于支持
+
 所以修改的代码如下:
 ```
 		if _,ok:= m[x.Name]; !ok {
