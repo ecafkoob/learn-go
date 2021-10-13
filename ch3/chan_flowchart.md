@@ -138,7 +138,7 @@ flowchart TD
 
 5. time.Sleep
     - time.Sleep 实际上调用 runtime.timeSleep 通过汇编可以看出来.
-    - 主要是给 g 的 time 字段的 f 和 nextwhen 赋值. f 是时间到了要做什么. 这里是 goroutineReady,也就是时间到了就调用这个函数这个函数里面调用goready 唤醒 G, nextwhen 是当前时间戳的纳秒级表示加上 参数传来的 duration 的 ns 级表示. 最后 gopark 挂起当前 G.
+    - 主要是给 g 的 timer 字段的 f 和 nextwhen 赋值. f 是时间到了要做什么. 这里是 goroutineReady,也就是时间到了就调用这个函数这个函数里面调用goready 唤醒 G, nextwhen 是当前时间戳的纳秒级表示加上 参数传来的 duration 的 ns 级表示. 最后 gopark 挂起当前 G.
 
 6. sync 里面的锁
     - *加锁*
