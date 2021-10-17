@@ -156,5 +156,41 @@ flowchart TD
 
     - selectgo() 调用了 gopark 挂起 G
 
-
+    - select 没有 default 分支时阻塞的进行 chansend 和 chanrecv, 其实就是 block 开关不同.
+```go
+// compiler implements
+//
+//	select {
+//	case c <- v:
+//		... foo
+//	default:
+//		... bar
+//	}
+//
+// as
+//
+//	if selectnbsend(c, v) {
+//		... foo
+//	} else {
+//		... bar
+//	}
+```
+```go
+// compiler implements
+//
+//	select {
+//	case v, ok = <-c:
+//		... foo
+//	default:
+//		... bar
+//	}
+//
+// as
+//
+//	if selected, ok = selectnbrecv(&v, c); selected {
+//		... foo
+//	} else {
+//		... bar
+//	}
+```
 ### [TODO]当 map 正在扩容时，for range 过程是如何在 buckets 和 oldbuckets 中进行遍历的?
