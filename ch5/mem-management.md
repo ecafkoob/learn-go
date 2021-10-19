@@ -24,3 +24,32 @@ mmap 可以指定起点和终点.
 
 go 拿到的堆内存被分为 多个 arena 一个 arena 64M  arena 被分为 8192 个大小为 8K 的 page, 这些 page 通过组合成为大小不同
 span span 的种类通过 spanclass 描述, 根据大小分为 68 个,根据是否包含指针 noscan 所以一共有 68 * 2 种 spanclass 
+
+
+mheap 全局唯一:
+arenas [1]*[1<<22]*heapArena
+
+heapArena:
+
+mspan:
+
+mcache:
+
+mheap.central:
+
+
+## 垃圾回收算法
+- mark sweep 标记清除
+  - 不会移动对象的位置,c 和 c 艹 之类的提供指针语义的可以用.
+- mark compact 标记整理
+  - 涉及到对象的移动, 不适合 c & c 艹.
+- copy GC
+  - 把堆内存分为了 from to 两部分.
+- 引用计数法
+  - 增加了mutator 的压力.
+
+## 评价垃圾回收算法的好坏的标准
+- stw 时间长短
+- 吞吐量
+- 堆使用效率
+- 访问的局部性
