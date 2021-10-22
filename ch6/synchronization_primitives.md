@@ -1,6 +1,9 @@
 Q: sync.Pool 中的对象以前只能存活一个 GC 周期，在增加 victim cache 之后最多可以存活两个 GC 周期，这种说法是正确的吗?
+
+
 A: 我觉得这说法是对的. 使用 pool.put() 把对象放放回 local 队列.这时 GC, local 里面的所有对象都被挪到 victim 队列中.在下次 GC 如果还没有人用
 那么 victim 将会被清除. 如果 victim 里面的对象在第一次 GC 之后 第二次 GC 之前被get 使用了. 这对象是有可能活很久,但是被 get 的对象已经不在 pool 里面了.
+
 
 通过 atomic.Cas 实现一个锁.
 
@@ -45,7 +48,6 @@ func (tl *toyLock) Unlock() {
 		return
 	}
     semarelease()	
-	// semrelease(&tl.sema) // 唤醒其它阻塞的goroutine
 }
 
 ```
@@ -62,7 +64,8 @@ func (tl *toyLock) Unlock() {
 # cat hw.ml
 print_string "Hello world!\n"
 ```
-ocmal hw.ml 
+运行ocaml 程序:
+`ocaml hw.ml`
 
 
 litmus7 脚本:
@@ -78,10 +81,12 @@ exists (0:EAX=0 /\ 1:EAX=0)
 
 A litmus test source has three main sections:
 
-    The initial state defines the initial values of registers and memory locations. Initialisation to zero may be omitted.
-    The code section defines the code to be run concurrently — above there are two threads. Yes we know, our X86 assembler syntax is a mistake.
-    The final condition applies to the final values of registers and memory locations. 
+    1. The initial state defines the initial values of registers and memory locations. Initialisation to zero may be omitted.
+    2. The code section defines the code to be run concurrently — above there are two threads. Yes we know, our X86 assembler syntax is a mistake.
+    3. The final condition applies to the final values of registers and memory locations. 
 
+
+litmus7 运行结果:
 ```sh
 ➜ litmus7 happens_before
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -141,11 +146,13 @@ Parameters
 /* speedcheck: no */
 
 ```
+
 结果 log 比较重要的信息:
 - 柱状图把这次模拟出现情况 和 对应次数
 - 以上面的例子 0:EAX 表示 进程 0 视角 eax 寄存器的值. x y 是全局的就没有区分线程.
 - 因为我们的脚本 里面写了 `exists (0:EAX=0 /\ 1:EAX=0)` 表示我们只关心这种情况 他的 Witnesses 就告诉我们我们关心的情况
 在 100w 次模拟中出现了 5 次. 就这样.
+
 
 # 支线任务
 Learn OCaml in Y minutes
@@ -482,9 +489,8 @@ sum_int_list t ;;
 
 ```
 
-# sync.Once
-# sync.Mutex
-# sync.RWMutex
-# sync.WaitGroup
-# atomic 相关
-# happens before
+### sync.Once
+### sync.Mutex
+### sync.RWMutex
+### sync.WaitGroup
+###  atomic 相关
