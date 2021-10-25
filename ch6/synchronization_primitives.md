@@ -53,7 +53,7 @@ func (tl *toyLock) Unlock() {
 ```
 
 # 玩一玩 litmus7
-- 安装 litmus7, 直接 homebrew 安装即可.
+- Mac 系统安装 litmus7, 直接 homebrew 安装即可.
     - 安装 OCaml. 的包管理工具 opam `brew install gpatch && brew install opam`
     - 安装 litmus7. 这个工具是 herdtool7 套件中的一个 `opam install herdtools7`
 - litmus 的使用文档: http://diy.inria.fr/doc/litmus.html
@@ -149,9 +149,9 @@ Parameters
 
 结果 log 比较重要的信息:
 - 柱状图把这次模拟出现情况 和 对应次数
-- 以上面的例子 0:EAX 表示 进程 0 视角 eax 寄存器的值. x y 是全局的就没有区分线程.
+- 以上面的例子 0:EAX 表示进程 0 视角 EAX 寄存器的值. x y 是全局的就没有区分进程.
 - 因为我们的脚本 里面写了 `exists (0:EAX=0 /\ 1:EAX=0)` 表示我们只关心这种情况 他的 Witnesses 就告诉我们我们关心的情况
-在 100w 次模拟中出现了 5 次. 就这样.
+在 10w 次模拟中出现了 5 次. 就这样.
 
 
 # 支线任务
