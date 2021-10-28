@@ -106,3 +106,41 @@ return -epollctl(epfd, _EPOLL_CTL_ADD, int32(fd), &ev)
 ### pollWait 流程
 1. netpoll
 2. gopark
+
+# 抢占试调度
+- 先看一下 demo (go version 1.13.15)
+- 结果是程序会阻塞.
+- 通过 dlv 看一下发生了什么, 找到 demo 的进程号. dlv attach pid 
+- grs 看一下 所有的 gorouting  gr # 可以切换 协程.
+- 可以看到停在了 for {} 和 fmt.Println() 这两个函数这里.切到 阻塞在打印函数的 gr. 可以发现
+- 其实是阻塞在 stopTheWorldWithSema 这个函数这里.
+- 然后调用了 preemptall  这个函数.
+- 因为没有抢占试调度.就只能等上面的主动让出. 但是上面的 gr 不会 让出 CPU. 就导致卡死了.
+
+看一下 原来的实现: 主要是在 mgc.go 开启写屏障. 主要涉及一下全局变量:
+- gcBlackenEnabled
+- writeBarrier.enable
+- gcphase
+
+
+STW 的主要逻辑:
+- 就是要占用所有的 P, GC 要等待 maxprocs 个 P 全都被抢占.
+- 状态为: 当前 P, syscall P, idle 直接把状态置为 _Pgcstop.
+- 对于当前正在运行的 P, 要把对应的 g 的 stackguard0 设置为 stackPreempt 另一方面 sched 的 gcwaiting = 1
+表示 GC 在等一些没有让出的 P.
+- 通过编译器插到g 运行函数的代码![img.png](img.png) 来实现强占. 比如扩栈,或者有多个函数的情况就会走到
+morestack_noctxt. 
+- 如果 g.stackguard0 被设置为 stackPreempt 扩栈就会失败. 然后就通过g.gobuf 执行 schedule() 函数.
+- schedule() 如何 发现 sched 的 gcwaiting == 1 就让出 P 并且设置 _Pgcstop
+
+基于信号的异步抢占是怎么做的?
+- stopTheWorldWithSema 还是调用 Preemptall() -> Preemptone() 这个函数发生了变化.
+- 设置了g 和 p 的抢占标志后. 检查 系统是否支持抢占, 还有用户设置的变量. 都 ok 之后
+  - 执行 preemptm 发信号 抢占 m , 发的信号就是 sigPreempt 其实就是 SIGURG. 信号的发送就完成了.发信号的系统调用是 tgkill
+- 信号的接收. m 初始化的时候注册了信号处理函数. 这个抢占信号有专门的处理函数.
+- doSigPreempt() 
+  - Check if this G wants to be preempted and is safe to preempt.
+  - 主要是检查 G 是否有足够的栈空间执行抢占函数. 是否能安全的扫描栈和寄存器.是否能安全的 runtime 交互等.
+  - 然后通过汇编跳转到 asyncPreempt 然后 跳转到 asyncPreempt2 然后走到 schedule() 然后就是设置 P 的状态这些
+  和老版本一样
+- 
