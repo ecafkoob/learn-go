@@ -107,7 +107,7 @@ return -epollctl(epfd, _EPOLL_CTL_ADD, int32(fd), &ev)
 1. netpoll
 2. gopark
 
-# 抢占试调度
+# 抢占式调度
 - 先看一下 demo (go version 1.13.15)
 - 结果是程序会阻塞.
 - 通过 dlv 看一下发生了什么, 找到 demo 的进程号. dlv attach pid 
